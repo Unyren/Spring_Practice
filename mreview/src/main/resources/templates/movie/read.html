@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+  <th:block th:fragment="content">
+
+    <link th:href="@{/css/starrr.css}"rel="stylesheet">
+    <link th:href="@{/css/font-awesome.css}" rel="stylesheet">
+    <script th:src="@{/js/starrr.js}"></script>
+    <script th:src="@{/js/moment-with-locales.js}"></script>
+
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3"></div> <!-- /.col-lg-6 -->
+          <div class="col-lg-6">
+            <div class="custom-block" data-aos="fade-up" data-aos-delay="100">
+              <h2 class="section-title">Movie Read Page</h2>
+              <form class="contact-form" th:action="@{register}" th:method="post">
+                <div class="box"></div>
+
+                <div class="form-group">
+                  <label class="" for="title">Title</label>
+                  <input type="text" th:value="${dto.title}" class="form-control" name="title" id="title" aria-describedby="titleHelp" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="" for="title">Review Count</label>
+                  <input type="text" th:value="${dto.reviewCnt}" class="form-control" aria-describedby="titleHelp" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="" for="title">Avg</label>
+                  <input type="text" th:value="${dto.avg}" class="form-control" aria-describedby="titleHelp" readonly>
+                </div>
+                <a th:href="@{modify(mno=${dto.mno},page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-primary">Modify</a>
+                <a th:href="@{list(page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-info">List</a>
+              </form>
+            </div>
+            <div class="g-4 row row-cols-lg-5 row-cols-md-3 row-cols-2 uploadResult" >
+              <!--업로드 된 이미지 출력-->
+              <th:block th:each="movieImage:${dto.imageDTOList}">
+                <div class="col" style="max-width: 25%;" th:data-file="${movieImage.imageURL}" th:data-name="${movieImage.imgName}" th:data-path="${movieImage.path}" th:data-uuid="${movieImage.uuid}">
+                  <div class="card-product card" style="flex-direction:row;">
+                    <div class="card-body" style="padding: 0;">
+                      <img th:src="|/display?fileName=${movieImage.thumbnailURL}|" alt="" class="img-thumbnail"/>
+                    </div>
+                  </div>
+                </div>
+              </th:block>
+            </div>
+            <p></p>
+            <!--리뷰버튼-->
+            <div>
+              <span class="badge badge-secondary replyCount"> Review Count [[${dto.reviewCnt}]] </span>
+              <span class="badge badge-secondary addReviewBtn"> Review Register</span>
+            </div>
+            <p></p>
+
+            <!--리뷰 목록-->
+
+            <div class="list-group reviewList"></div><!--<div class="list-group reviewList">-->
+
+          </div> <!-- /.col-lg-6 -->
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+
+    <!-- Review Modal -->
+    <div class="modal fade reviewModal"  tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" >Movie Review</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Reviewer ID</label>
+              <input type="text" class="form-control" name="mid">
+            </div>
+            <div class="form-group">
+              <label>Grade</label>
+              <div class="starrr"></div>
+            </div>
+            <div class="form-group">
+              <label>Review Text</label>
+              <input type="text" class="form-control" name="text" placeholder="Good Movie!">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm"  data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary reviewSavaBtn btn-sm">Save changes</button>
+            <button type="button" class="btn btn-warning modifyBtn btn-sm">Modify</button>
+            <button type="button" class="btn btn-danger removeBtn btn-sm">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div><!--리뷰-->
+
+    <!-- Img Modal -->
+    <div class="modal fade imageModal"tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" >Picture</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      $(document).ready(function () {
+
+
+        let grade=0;
+
+        let mno=[[${dto.mno}]];
+
+        $('.starrr').starrr({
+          rating: grade,
+          change: function (e, value) {
+            if(value!=undefined) {
+              console.log(value);
+              grade=value;
+            }
+          }
+        });
+        let reviewModal= $(".reviewModal");
+        let inputMid=$('input[name=mid]');
+        let inputText=$('input[name=text]');
+
+
+        $('.addReviewBtn').on("click",function () {
+
+          //기존값 초기화
+          inputMid.val('');
+          inputText.val('');
+          $(".removeBtn, .modifyBtn").hide();
+          $(".reviewSavaBtn").show();
+
+          reviewModal.modal('show');//영화리뷰 모달창을 띄운다.
+        });
+        $('.reviewSavaBtn').on("click",function () {
+          let mid= inputMid.val();
+          let text=inputText.val();
+          let data={
+            mno:mno,
+            grade:grade,
+            text:text,
+            mid:mid
+          };//Object
+
+          $.ajax({
+            url:'/reviews/'+mno,
+            type:'post',
+            data: JSON.stringify(data),//오브젝트를 제이슨으로
+            contentType:'application/json; charset=utf-8',
+            dataType:'text',//서버에서 응답
+            success:function (result){
+              console.log(result);
+              location.reload();//새로고침
+            }
+          });
+        });
+
+        //페이지가 열리면 바로 리뷰 데이터들을 가져와서 사용
+        function getMovieReviews(){
+          function formatTime(str){
+            let date=new Date(str);
+
+            return date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+          }
+
+          $.ajax({
+            url:'/reviews/'+mno+"/all",
+            type:'get',
+            //data: JSON.stringify(data),//오브젝트를 제이슨으로
+           //contentType:'application/json; charset=utf-8',
+            dataType:'json',//서버에서 응답
+            success:function (result){
+              console.log(result);
+              let str='';
+
+              $.each(result, function (idx, review) {
+                let regDate = moment(review.regDate).format('YYYY-MM-DD HH:mm:ss');
+
+                str+='<div class="card">';
+                str+='  <div class="card-body" data-grade="'+review.grade+'" data-reviewnum="'+review.reviewnum+'" data-mid="'+review.mid+'">';
+                str+='    <h5 class="card-title">'+review.text+'<span>'+review.grade+'</span></h5>';
+                str+='    <p class="card-text">';
+                str+='     '+review.nickname+'<br/>';
+                str+='     '+regDate+'';
+                str+='    </p>';
+                str+='  </div>';
+                str+='</div>';
+              });
+              $(".reviewList").html(str);
+            }
+          });
+        }
+
+        getMovieReviews();
+        let reviewnum;
+
+        $(".reviewList").on("click",".card-body",function () {
+          $('.reviewSavaBtn').hide();//숨김
+          $('.removeBtn, .modifyBtn').show();//보여주기
+
+          let targetReview=$(this);
+          reviewnum = targetReview.data('reviewnum');
+          let mid = targetReview.data('mid');
+
+          inputMid.val(mid);
+          inputText.val(targetReview.find('.card-title').clone().children().remove().end().text());
+
+          //console.log(targetReview.find('.card-title').clone().children().remove().end().text());
+
+          //let grade = targetReview.find('.card-title span').html();
+          let grade2 = targetReview.data('grade');//<div data-grade="5"
+          //console.log("[" + grade + "]");
+          if(grade != grade2){
+            $(".starrr a:nth-child(" + grade2 + ")").trigger('click');
+          }
+
+          reviewModal.modal('show');
+        });
+
+        //수정
+        $('.modifyBtn').on('click',function () {
+          let mid= inputMid.val();
+          let text=inputText.val();
+          let data={
+            reviewnum:reviewnum,
+            mno:mno,
+            grade:grade,
+            text:text,
+            mid:mid
+          };//Object
+
+          $.ajax({
+            url:'/reviews/'+mno+'/'+reviewnum,
+            type:'put',
+            data: JSON.stringify(data),//오브젝트를 제이슨으로
+            contentType:'application/json; charset=utf-8',
+            dataType:'text',//서버에서 응답
+            success:function (result){
+              console.log(result);
+              location.reload();//새로고침
+            }
+          });
+        });
+        //삭제
+        $('.removeBtn').on('click',function () {
+
+
+          $.ajax({
+            url:'/reviews/'+mno+'/'+reviewnum,
+            type:'delete',
+            //data: JSON.stringify(data),//오브젝트를 제이슨으로
+            //contentType:'application/json; charset=utf-8',
+            dataType:'text',//서버에서 응답
+            success:function (result){
+              console.log(result);
+              location.reload();//새로고침
+            }
+          });
+        });
+        //큰그림
+        $('.uploadResult div.col').on('click', function () {
+          let file=$(this).data('file');
+          $('.imageModal .modal-body').html('<img src="/display?fileName='+file+'"alt="" style="width:100%">');
+          $('.imageModal').modal('show');
+        });
+      });// $(document).ready(function () {
+
+
+    </script>
+
+  </th:block>
+</th:block>

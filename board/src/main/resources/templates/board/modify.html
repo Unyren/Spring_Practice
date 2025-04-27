@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+    <th:block th:fragment="content">
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Board Register Page</h4>
+                <p class="card-description">
+
+                </p>
+                <div class="table-responsive pt-3">
+                    <form id="modForm" th:action="@{modify}" th:method="POST">
+                        <input type="hidden" name="page" th:value="${requestDTO.page}">
+                        <input type="hidden" name="type" th:value="${requestDTO.type}">
+                        <input type="hidden" name="keyword" th:value="${requestDTO.keyword}">
+                        <div class="form-group">
+                            <label>Bno</label>
+                            <input name="bno" class="form-control" th:value="${dto.bno}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input name="title" class="form-control" th:value="${dto.title}" >
+                        </div>
+                        <div class="form-group">
+                            <label>Content</label>
+                            <textarea name="content" class="form-control" >[[${dto.content}]]</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Writer</label>
+                            <input name="writerEmail" class="form-control" th:value="${dto.writerName}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>RegDate</label>
+                            <input  class="form-control" th:value="${#temporals.format(dto.regDate,'yyyy-MM-dd HH:mm:ss')}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>ModDate</label>
+                            <input  class="form-control" th:value="${#temporals.format(dto.modDate,'yyyy-MM-dd HH:mm:ss')}" readonly>
+                        </div>
+
+
+<!--                        <a th:href="@{modify(page=${dto.bno},page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-primary">Modify</a>-->
+<!--                        <a th:href="@{list(page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-info">List</a>-->
+                        <button type="button" class="btn btn-info modifyBtn">Modify</button>
+                        <button type="button" class="btn btn-info listBtn">List</button>
+                        <button type="button" class="btn btn-info removeBtn" >Remove</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            $(document).ready(function () {
+
+                let actionForm=$("#modForm");
+                $(".removeBtn").on("click",function () {
+                    if(!confirm("삭제하시겠습니까?")){
+                        return;
+                    }
+                    actionForm.attr("method","post");
+                    actionForm.attr("action","remove");
+                    actionForm.submit();
+                });
+                $(".modifyBtn").on("click",function () {
+                    if(!confirm("수정하시겠습니까?")){
+                        return;
+                    }
+                    actionForm.attr("method","post");
+                    actionForm.attr("action","modify");
+                    actionForm.submit();
+                });
+                $(".listBtn").on("click",function () {
+                    let page = $("input[name=page]");
+                    let type = $("input[name=type]");
+                    let keyword = $("input[name=keyword]");
+
+                    actionForm.empty();
+                    actionForm.append(page);
+                    actionForm.append(type);
+                    actionForm.append(keyword);
+
+                    actionForm.attr("method","get");
+                    actionForm.attr("action","list");
+                    actionForm.submit();
+                });
+            });
+        </script>
+
+
+    </th:block>
+</th:block>

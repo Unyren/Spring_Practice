@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+    <th:block th:fragment="content">
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Board Register Page</h4>
+                <p class="card-description">
+
+                </p>
+                <div class="table-responsive pt-3">
+                    <form th:action="@{register}" th:method="POST">
+                        <div class="form-group">
+                            <label>Bno</label>
+                            <input name="bno" class="form-control" th:value="${dto.bno}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input name="title" class="form-control" th:value="${dto.title}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Content</label>
+                            <textarea name="content" class="form-control" readonly>[[${dto.content}]]</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Writer</label>
+                            <input name="writerEmail" class="form-control" th:value="${dto.writerName}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>RegDate</label>
+                            <input name="regDate" class="form-control" th:value="${#temporals.format(dto.regDate,'yyyy-MM-dd HH:mm:ss')}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>ModDate</label>
+                            <input name="modDate" class="form-control" th:value="${#temporals.format(dto.modDate,'yyyy-MM-dd HH:mm:ss')}" readonly>
+                        </div>
+
+                        <a th:href="@{modify(bno=${dto.bno},page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-primary">Modify</a>
+                        <a th:href="@{list(page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-info">List</a>
+
+                    </form>
+                    <div class="mt-4">
+                        <h5><span class="badge badge-info addReply"> Add Reply </span></h5>
+                        <h5><span class="badge badge-secondary replyCount"> Reply Count [[${dto.replyCount}]] </span></h5>
+                    </div>
+                    <div class="list-group replyList">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">댓글 등록</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <textarea name="replyText" class="form-control" id="replyText" placeholder="Reply Text..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="replyer" class="form-control" id="replyer" placeholder="Replyer">
+                            <input type="hidden" name="rno">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger btn-sm replyRemove"> Remove</button>
+                        <button type="button" class="btn btn-warning btn-sm replyModify">Modify</button>
+                        <button type="button" class="btn btn-primary btn-sm replySave">Save</button>
+                        <button type="button" class="btn btn-secondary btn-sm replyClose" data-dismiss="modal">Close</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            $(document).ready(function () {
+                let bno=[[${dto.bno}]];
+
+                let listGroup=$(".replyList");
+
+
+                function formatTime(strDate){
+                    let date = new Date(strDate);
+                    return (date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+" "+date.getHours()+":"+date.getMinutes());
+                }
+                function loadJSONData() {
+                    $.getJSON("/replies/board/" + bno, null, function (data) {
+                        console.log(data);
+
+                        //reply count 값 변경
+                        $(".replyCount").html("Reply Count"+data.length);
+
+                        let str="";
+
+                        $.each(data, function (idx, reply) {
+                            console.log(reply);
+                            str+= '<div class="card">';
+                            str+= '     <div class="card-body" data-rno="'+reply.rno+'"><b>'+reply.rno+'</b>';
+                            str+= '        <h5 class="card-title">'+reply.text+'</h5>';
+                            str+= '        <h6 class="card-subtitle mb-2 text-muted">'+reply.replyer+'</h6>';
+                            str+= '        <p class="card-text">'+formatTime(reply.regDate)+'</p>';
+                            str+= '    </div>';
+                            str+= '</div>';
+                        });
+                        listGroup.html(str);
+                    });
+                }
+
+
+                $(".replyCount").on("click", function () {
+                    loadJSONData();// function 호출
+                });
+                $(".addReply").on("click", function () {
+
+
+                    $("#replyText").val('');
+
+                    $("#replyer").val('');
+
+                    $(".modal").modal('show');
+                    $(".modal-footer .btn").hide();
+                    $(".replySave,.replyClose").show();//저장 닫기 보여주기
+                    $(".modal-title").html("댓글 등록");
+                });
+                $(".replySave").on("click", function () {
+                    let reply={
+                        bno:bno,
+                        text: $("textarea[name='replyText']").val(),
+                        replyer: $("input[name='replyer']").val()
+                    };//object
+                    console.log(reply);
+                    $.ajax({
+                        url:'/replies/',
+                        method:'post',
+                        data:JSON.stringify(reply),//오브젝트를 제이슨 데이터로 변환
+                        contentType:'application/json; charset=UTF-8',
+                        dataType:'json',
+                        success:function (data) {
+                            alert(data+"번 댓글이 등록되었습니다." )
+                            $(".modal").modal('hide');
+
+                            loadJSONData();
+                        }
+                    });
+                });
+                $(".list-group").on("click",".card-body", function () {
+                    $(".modal").modal('show');
+                    $(".modal-footer .btn").hide();
+                    $(".replyModify,.replyRemove,.replyClose").show();//수정 삭제 닫기 보여주기
+
+                    $(".modal-title").html("댓글 조회");
+
+                    //<태그 data-*='값'></태그>*가 rno
+                    let rno=($(this).data('rno'));
+                    $("input[name='rno']").val(rno);
+
+
+                    let replyText=$(this).find(".card-title").html();
+                    $("#replyText").val(replyText);
+
+                    let replyer=$(this).find(".card-subtitle").html();
+                    $("#replyer").val(replyer);
+
+                });
+                $(".replyRemove").on("click", function () {
+                    let rno= $("input[name='rno']").val();
+                    $.ajax({
+                        url:'/replies/'+rno,
+                        method:'delete',
+                        success:function (data) {
+                            if(data=='success'){
+                                alert("댓글이 삭제되었습니다.");
+                                $(".modal").modal('hide');
+                                loadJSONData();
+                            }
+                        }
+                    });
+                });
+                $(".replyModify").on("click", function () {
+                    let rno= $("input[name='rno']").val();
+                    let reply={
+                        rno:rno,
+                        bno:bno,
+                        text: $("textarea[name='replyText']").val(),
+                        replyer: $("input[name='replyer']").val()
+                    };//object
+                    console.log(reply);
+                    $.ajax({
+                        url:'/replies/'+rno,
+                        method:'put',
+                        data:JSON.stringify(reply),//오브젝트를 제이슨 데이터로 변환
+                        contentType:'application/json; charset=UTF-8',
+                        dataType:'text',
+                        success:function (data) {
+                            if(data=='success') {
+                                alert(data + "번 댓글이 수정되었습니다.");
+                                $(".modal").modal('hide');
+                                loadJSONData();
+                            }
+                        }
+                    });
+                });
+            });
+
+        </script>
+    </th:block>
+</th:block>

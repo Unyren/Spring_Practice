@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <ul>
+        <li th:each="dto : ${list}" th:if="${dto.sno %5==0}">[[${dto}]]</li>
+    </ul>
+    <ul>
+        <li th:each="dto : ${list}">
+            <span th:if="${dto.sno%5==0}" th:text="${'------------------------'+dto.sno}"></span>
+            <span th:unless="${dto.sno%5==0}" th:text="${'------------------------'+dto.first}"></span>
+        </li>
+    </ul>
+    <ul>
+        <li th:each="dto : ${list}" th:text="${dto.sno%5==0}?${dto.sno}:${dto.first}">
+        </li>
+    </ul>
+    <style>
+        .target{
+            background-color: chocolate;
+        }
+    </style>
+    <ul>
+        <li th:each="dto : ${list}" th:text="${dto.sno%5==0}?${dto.sno}:${dto.first}
+    "th:class="${dto.sno%5==0}?'target'">
+        </li>
+    </ul>
+    <ul>
+        <th:block th:each="dto : ${list}">
+        <li th:text="${dto.sno%5==0}?${dto.sno}:${dto.first}">
+        </li>
+        </th:block>
+    </ul>
+</body>
+</html>

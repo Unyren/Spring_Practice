@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+  <th:block th:fragment="content">
+
+    <link th:href="@{/css/starrr.css}"rel="stylesheet">
+    <link th:href="@{/css/font-awesome.css}" rel="stylesheet">
+    <script th:src="@{/js/starrr.js}"></script>
+    <script th:src="@{/js/moment-with-locales.js}"></script>
+
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3"></div> <!-- /.col-lg-6 -->
+          <div class="col-lg-6">
+            <div class="custom-block" data-aos="fade-up" data-aos-delay="100">
+              <h2 class="section-title">Movie Modify Page</h2>
+              <form id="modForm" th:action="@{modify}" th:method="modify">
+                <input type="hidden" name="page" th:value="${requestDTO.page}">
+                <input type="hidden" name="type" th:value="${requestDTO.type}">
+                <input type="hidden" name="keyword" th:value="${requestDTO.keyword}">
+                <input type="hidden" name="mno" th:value="${dto.mno}">
+
+                <div class="box"></div>
+
+                <div class="form-group">
+                  <label class="" for="title">Title</label>
+                  <input type="text" th:value="${dto.title}" class="form-control" name="title" id="title" aria-describedby="titleHelp" required>
+                </div>
+                <div class="form-group">
+                  <label class="" for="fileInput">Image Files</label>
+                  <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="fileInput" multiple required accept="image/*">
+                    <label class="custom-file-label" data-browse="Browse"></label>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary modifyBtn">Modify</button>
+                <button type="button" class="btn btn-info listBtn">List</button>
+                <button type="button" class="btn btn-danger removeBtn" >Remove</button>
+              </form>
+            </div>
+            <div class="g-4 row row-cols-lg-5 row-cols-md-3 row-cols-2 uploadResult" >
+              <!--업로드 된 이미지 출력-->
+              <th:block th:each="movieImage:${dto.imageDTOList}">
+                <div class="col" style="max-width: 25%;" th:data-file="${movieImage.imageURL}" th:data-name="${movieImage.imgName}" th:data-path="${movieImage.path}" th:data-uuid="${movieImage.uuid}">
+                  <div class="card-product card" style="flex-direction:row;">
+                    <div class="card-body" style="padding: 0;">
+                      <img th:src="|/display?fileName=${movieImage.thumbnailURL}|" alt="" class="img-thumbnail"/>
+                      <span class="badge badge-light" th:data-exist="@{old}" th:data-name="${movieImage.imageURL}" style="position: absolute;left: 5px;top: 5px;">X</span>
+                    </div>
+                  </div>
+                </div>
+              </th:block>
+            </div>
+            <p></p>
+            <!--리뷰버튼-->
+
+            <p></p>
+
+            <!--리뷰 목록-->
+
+            <div class="list-group reviewList"></div><!--<div class="list-group reviewList">-->
+
+          </div> <!-- /.col-lg-6 -->
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+
+    <!-- Review Modal -->
+    <div class="modal fade reviewModal"  tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" >Movie Review</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Reviewer ID</label>
+              <input type="text" class="form-control" name="mid">
+            </div>
+            <div class="form-group">
+              <label>Grade</label>
+              <div class="starrr"></div>
+            </div>
+            <div class="form-group">
+              <label>Review Text</label>
+              <input type="text" class="form-control" name="text" placeholder="Good Movie!">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm"  data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary reviewSavaBtn btn-sm">Save changes</button>
+            <button type="button" class="btn btn-warning modifyBtn btn-sm">Modify</button>
+            <button type="button" class="btn btn-danger removeBtn btn-sm">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div><!--리뷰-->
+
+    <!-- Img Modal -->
+    <div class="modal fade imageModal"tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" >Picture</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      $(document).ready(function () {
+
+        let regex= new RegExp("(.*?)\.(exe|sh|zip|alz|tiff)$");
+        let maxSize= 10*1024*1024; //10mb
+
+        function checkExtension(fileName, fileSize){
+          //용량초과
+          if(fileSize>maxSize){
+            alert("파일 사이즈 초과");
+            return false;
+          }
+
+          if(regex.test(fileName)){
+            alert("해당 종류의 파일은 업로드 할 수 없습니다.");
+            return false;
+
+          }
+          return true;
+        }
+
+        $(".custom-file-input").on("change",function () {
+          let fileName=$(this).val().split("\\").pop(); //파일명만 가져옴
+          $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+          let formData=new FormData;
+          let inputFile = $(this);
+          let files=inputFile[0].files;
+          let appended =false; //첨부파일이 추가되면 참값을 가지고 그렇지않으면 거짓
+          for(let i=0; i<files.length;i++){
+            //허용된 첨부파일 체크
+            if(!checkExtension(files[i].name, files[i].size)){
+              return false;//허용되지 않는 파일을 첨부했을때 작업 수행하지 않는다.
+            }
+
+            formData.append("uploadFiles",files[i]);
+
+            appended=true;//첨부파일 등록여부
+
+
+          }
+          if(appended==false){
+            return ;//void 리턴값 없다.
+          }
+
+          $.ajax({
+            url:'/uploadAjax',
+            processData:false,//첨부파일 등록시 반드시 필요 enctype="multipart/form-data"
+            contentType:false,
+            data:formData,
+            type:'post',
+            dataType:'json',
+            success:function (result){
+              showResult(result);
+              //나중에 화면 처리
+            },
+            error:function (jqXHR, textStatus,errorThrown) {
+              console.log(textStatus);
+            }
+          });
+
+        });
+
+        function showResult(arr) {
+          console.log(arr);
+
+          let divArea=$(".uploadResult");
+
+          let str="";
+
+
+          for(let i=0; i<arr.length;i++) {
+            str += '<div class="col" style="max-width: 25%;" data-name="' + arr[i].fileName + '" data-path="' + arr[i].folderPath + '" data-uuid="' + arr[i].uuid + '">';
+            str += '  <div class="card-product card" style="flex-direction:row;">';
+            str += '     <div class="card-body" style="padding: 0;">';
+            str += '       <img src="/display?fileName=' + arr[i].thumbnailURL + '" alt="" className="img-thumbnail"/>';
+            str += '        <span class="badge badge-light" data-exist="new" data-name="' + arr[i].imageURL + '" style="position: absolute;left: 5px;top: 5px;">X</span>';
+            str += '    </div>';
+            str += '  </div>';
+            str += ' </div>';
+
+
+          }
+          divArea.append(str);
+        }
+
+        $(".uploadResult").on("click","span",function () {
+          let target=$(this);
+          let fileName=$(this).data("name");//<div data-name="파일명"
+          let targetDiv= $(this).closest("div.col");//<div class=".col" 삭제
+          let exist=$(this).data("exist");//<div data-exist="파일명"
+
+          if(exist=='old'){
+            targetDiv.remove();//<div class=".col" 삭제
+            return;
+          }
+
+          //실제 파일 삭제
+          $.post('/removeFile',
+            {fileName:fileName},
+            function (result){
+              if(result==true){
+                targetDiv.remove();//<div class=".col" 삭제
+              }
+            }
+          );
+        })
+
+
+
+        let actionForm=$("#modForm");
+        $(".removeBtn").on("click",function () {
+          if(!confirm("삭제하시겠습니까?")){
+            return;
+          }
+
+          let inputMno=$("input[name='mno']");
+
+          actionForm.empty();
+          actionForm.append(inputMno);
+
+          console.log("removeBtn");
+          actionForm.attr("method","post");
+          actionForm.attr("action","remove");
+          actionForm.submit();
+        });
+        $(".modifyBtn").on("click",function () {
+          if(!confirm("수정하시겠습니까?")){
+            return;
+          }
+          let str="";
+          $(".uploadResult > div.col").each(function (i, obj) {
+            console.log(i, obj);
+            str+='<input type="hidden" name="imageDTOList['+i+'].imgName" value="'+$(obj).data("name")+'">';
+            str+='<input type="hidden" name="imageDTOList['+i+'].uuid" value="'+$(obj).data("uuid")+'">';
+            str+='<input type="hidden" name="imageDTOList['+i+'].path" value="'+$(obj).data("path")+'">';
+          });
+
+          $(".box").html(str);
+          actionForm.attr("method","post");
+          actionForm.attr("action","modify");
+          actionForm.submit();
+        });
+        $(".listBtn").on("click",function () {
+          let page = $("input[name=page]");
+          let type = $("input[name=type]");
+          let keyword = $("input[name=keyword]");
+
+          $('.uploadResult').empty();//비우기
+
+          actionForm.empty();
+          actionForm.append(page);
+          actionForm.append(type);
+          actionForm.append(keyword);
+
+          actionForm.attr("method","get");
+          actionForm.attr("action","list");
+          actionForm.submit();
+        });
+      });
+    </script>
+
+  </th:block>
+</th:block>

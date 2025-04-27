@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+  <th:block th:fragment="content">
+
+    <div class="container">
+      <div class="row mb-3 justify-content-end">
+        <a th:href="@{register}" class="btn btn-secondary btn-sm">Register</a>
+      </div>
+      <div class="row align-items-stretch">
+
+        <!--반복-->
+        <th:block th:each="dto : ${result.dtoList}">
+        <div class="col-lg-6 mb-4"  data-aos="fade-up" data-aos-delay="100">
+          <div class="media-h d-flex h-100">
+            <figure>
+              <img th:src="|/display?fileName=${dto.imageDTOList[0].getThumbnailURL()}|" alt="Image">
+            </figure>
+            <div class="media-h-body">
+              <h2 class="mb-3">[[${dto.mno}]]. <a th:href="@{read(mno=${dto.mno}, page=${result.page},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">[[${dto.title}]]</a></h2>
+              <div class="meta "><span class="icon-calendar mr-2"></span><span>[[${#temporals.format(dto.regDate,'yyyy-MM-dd')}]]</span>  </div>
+              <p>Review Count : [[${dto.reviewCnt}]]</p>
+              <p>AVG Rating : [[${dto.avg}]]</p>
+            </div>
+          </div>
+        </div>
+        </th:block>
+        <!-- 반복-->
+      </div>
+
+      <!--페이징-->
+      <div class="row mt-5">
+        <div class="col-12 text-center">
+          <ul class="list-unstyled custom-pagination">
+            <!--페이지 이전 버튼-->
+            <li th:if="${result.prev}"><a th:href="@{list(page=${result.start-1},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">&lt;&lt;</a></li>
+            <!--페이지 번호 출력-->
+            <li th:each="page : ${result.pageList}" th:class="${result.page == page?'active':''}"><a th:href="@{list(page=${page},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">[[${page}]]</a></li>
+            <!--페이지 다음 버튼-->
+            <li th:if="${result.next}"><a th:href="@{list(page=${result.end+1},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">&gt;&gt;</a></li>
+
+          </ul>
+        </div>
+      </div>
+      <!--페이징-->
+      <div class="row mt-5">
+        <div class="col-12 d-flex justify-content-center">
+          <form id="searchForm" class="form-inline" >
+            <div class="input-group">
+              <input type="hidden" name="page" value = "1">
+              <div class="input-group-prepend">
+                <select class="custom-select" name="type">
+                  <option th:selected="${pageRequestDTO.type == null}">-------</option>
+                  <option value="t" th:selected="${pageRequestDTO.type =='t'}" >영화제목</option>
+                </select>
+              </div>
+              <input class="form-control" name="keyword" th:value="${pageRequestDTO.keyword}">
+              <div class="input-group-append" id="button-addon4">
+                <button class="btn btn-outline-secondary btn-search" type="submit">Search</button>
+                <button class="btn btn-outline-secondary btn-clear" type="button">Clear</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Modal body text goes here.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script th:inline="javascript">
+      let msg=[[${msg}]];
+
+      console.log(msg);
+
+      if(msg){
+        $("div.modal-body > p").text(msg+'번 글이 처리 되었습니다.');
+        $(".modal").modal('show');//모달창 띄우기
+      }
+
+      let searchForm=$("#searchForm");
+
+      $(".btn-search").on("click", function (e) {
+        e.preventDefault();//Submit or 앵커 기능 중지
+        searchForm.submit();
+      });
+      $(".btn-clear").on("click", function () {
+        searchForm.empty();
+        searchForm.submit();
+
+      });
+    </script>
+  </th:block>
+</th:block>

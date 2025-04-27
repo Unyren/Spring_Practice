@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+    <th:block th:fragment="content">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Board List Page</h4>
+                <p class="card-description">
+
+                <form action="/board/list" method="get" id="searchForm" class="form-inline" style="float: left;">
+                    <div class="input-group">
+                        <input type="hidden" name="page" value = "1">
+                        <div class="input-group-prepend">
+                            <select class="custom-select" name="type">
+                                <option th:selected="${pageRequestDTO.type == null}">-------</option>
+                                <option value="t" th:selected="${pageRequestDTO.type =='t'}" >제목</option>
+                                <option value="c" th:selected="${pageRequestDTO.type =='c'}"  >내용</option>
+                                <option value="w"  th:selected="${pageRequestDTO.type =='w'}" >작성자</option>
+                                <option value="tc"  th:selected="${pageRequestDTO.type =='tc'}" >제목 + 내용</option>
+                                <option value="tcw"  th:selected="${pageRequestDTO.type =='tcw'}" >제목 + 내용 + 작성자</option>
+                            </select>
+                        </div>
+                        <input class="form-control" name="keyword" th:value="${pageRequestDTO.keyword}">
+                        <div class="input-group-append" id="button-addon4">
+                            <button class="btn btn-outline-secondary btn-search" type="submit">Search</button>
+                            <button class="btn btn-outline-secondary btn-clear" type="button">Clear</button>
+                        </div>
+                    </div>
+                </form>
+
+                    <a th:href="register" class="btn btn-outline-primary btn-sm" th:style="${'float:right;'}">REGISTER</a>
+                </p>
+                <div class="table-responsive pt-3">
+                    <table class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>
+                                #
+                            </th>
+                            <th>
+                                Title
+                            </th>
+                            <th>
+                                Writer
+                            </th>
+                            <th>
+                                Regdate
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <th:block th:each="dto, dtoState: ${result.dtoList}">
+                        <tr th:class="${trClass[dtoState.index%5]}" >
+                            <td>
+                                [[${dto.bno}]]
+<!--                                [[${dtoState.index}]]-->
+                            </td>
+                            <td>
+                                <a th:href="@{read(bno=${dto.bno}, page=${result.page},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">[[${dto.title}]]</a>
+                                -----------------------[<b>[[${dto.replyCount}]]</b>]
+                            </td>
+                            <td>
+                                [[${dto.writerName}]] <small>[[${dto.writerEmail}]]</small>
+                            </td>
+                            <td>
+                                [[${#temporals.format(dto.regDate,'yyyy-MM-dd HH:mm:ss')}]]
+                            </td>
+                        </tr>
+                        </th:block>
+                        </tbody>
+                    </table>
+
+                </div>
+                <nav aria-label="Page navigation example" ,style="${margin-top:25px;}">
+                    <ul class="pagination" style="justify-content: center;">
+                        <li class="page-item" th:if="${result.prev}"><a class="page-link" th:href="@{/board/list(page=${result.start-1},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">Prev</a></li>
+                        <li th:class="'page-item '+ ${result.page == page?'active':''}" th:each="page : ${result.pageList}"><a class="page-link" th:href="@{/board/list(page=${page},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">[[${page}]]</a></li>
+                        <li class="page-item" th:if="${result.next}"><a class="page-link" th:href="@{/board/list(page=${result.end+1},type=${pageRequestDTO.type},keyword=${pageRequestDTO.keyword})}">Next</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <!--모달창-->
+        <div class="modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Modal title</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Modal body text goes here.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--끝-->
+        <script th:inline="javascript">
+            let msg=[[${msg}]];
+
+            console.log(msg);
+
+            if(msg){
+                $("#page-content-wrapper > div > div > div > div > div.modal-body > p").text(msg+'번 글이 처리 되었습니다.');
+                $(".modal").modal();//모달창 띄우기
+            }
+
+            let searchForm=$("#searchForm");
+
+            $(".btn-search").on("click", function (e) {
+                e.preventDefault();//Submit or 앵커 기능 중지
+                searchForm.submit();
+            });
+            $(".btn-clear").on("click", function () {
+                searchForm.empty();
+                searchForm.submit();
+
+            });
+        </script>
+    </th:block>
+</th:block>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+    <th:block th:fragment="content">
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Board Register Page</h4>
+                <p class="card-description">
+
+                </p>
+                <div class="table-responsive pt-3">
+                    <form th:action="@{register}" th:method="POST">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input name="title" class="form-control" placeholder="Enter Title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Content</label>
+                            <textarea name="content" class="form-control" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Writer</label>
+                            <input name="writerEmail" class="form-control" placeholder="Enter Writer" required>
+                        </div>
+                        <a th:href="@{modify(page=${dto.bno},page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-primary">Modify</a>
+                       <a th:href="@{list(page=${requestDTO.page}, type=${requestDTO.type},keyword=${requestDTO.keyword})}"class="btn btn-info">List</a>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </th:block>
+</th:block>

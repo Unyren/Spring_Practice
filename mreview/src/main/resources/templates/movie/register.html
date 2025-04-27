@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+  <th:block th:fragment="content">
+
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3"></div> <!-- /.col-lg-6 -->
+          <div class="col-lg-6">
+            <div class="custom-block" data-aos="fade-up" data-aos-delay="100">
+              <h2 class="section-title">Movie Register Page</h2>
+              <form class="contact-form" th:action="@{register}" th:method="post">
+                <div class="box"></div>
+
+                <div class="form-group">
+                  <label class="" for="title">Title</label>
+                  <input type="text" class="form-control" name="title" id="title" aria-describedby="titleHelp" required>
+                </div>
+                <div class="form-group">
+                  <label class="" for="fileInput">Image Files</label>
+                  <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="fileInput" multiple required accept="image/*">
+                    <label class="custom-file-label" data-browse="Browse"></label>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+            <div class="g-4 row row-cols-lg-5 row-cols-md-3 row-cols-2 uploadResult" >
+              <!--업로드 된 이미지 출력-->
+
+            </div>
+          </div> <!-- /.col-lg-6 -->
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+
+    <script>
+      $(document).ready(function () {
+
+        let regex= new RegExp("(.*?)\.(exe|sh|zip|alz|tiff)$");
+        let maxSize= 10*1024*1024; //10mb
+        //용량,허용되는 확장가자 맞으면 참 그렇지 않으면 거짓
+        function checkExtension(fileName, fileSize){
+          //용량초과
+          if(fileSize>maxSize){
+            alert("파일 사이즈 초과");
+            return false;
+          }
+
+          if(regex.test(fileName)){
+            alert("해당 종류의 파일은 업로드 할 수 없습니다.");
+            return false;
+
+          }
+          return true;
+        }
+
+        $(".custom-file-input").on("change",function () {
+          let fileName=$(this).val().split("\\").pop(); //파일명만 가져옴
+          $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+          let formData=new FormData;
+          let inputFile = $(this);
+          let files=inputFile[0].files;
+          let appended =false; //첨부파일이 추가되면 참값을 가지고 그렇지않으면 거짓
+          for(let i=0; i<files.length;i++){
+            //허용된 첨부파일 체크
+            if(!checkExtension(files[i].name, files[i].size)){
+              return false;//허용되지 않는 파일을 첨부했을때 작업 수행하지 않는다.
+            }
+
+            formData.append("uploadFiles",files[i]);
+
+            appended=true;//첨부파일 등록여부
+
+
+          }
+          if(appended==false){
+            return ;//void 리턴값 없다.
+          }
+
+          $.ajax({
+            url:'/uploadAjax',
+            processData:false,//첨부파일 등록시 반드시 필요 enctype="multipart/form-data"
+            contentType:false,
+            data:formData,
+            type:'post',
+            dataType:'json',
+            success:function (result){
+            showResult(result);
+              //나중에 화면 처리
+            },
+            error:function (jqXHR, textStatus,errorThrown) {
+              console.log(textStatus);
+            }
+          });
+
+        });
+        function showResult(arr) {
+          console.log(arr);
+
+          let divArea=$(".uploadResult");
+
+          let str="";
+
+
+          for(let i=0; i<arr.length;i++) {
+            str += '<div class="col" style="max-width: 25%;" data-name="' + arr[i].fileName + '" data-path="' + arr[i].folderPath + '" data-uuid="' + arr[i].uuid + '">';
+            str += '  <div class="card-product card" style="flex-direction:row;">';
+            str += '     <div class="card-body" style="padding: 0;">';
+            str += '       <img src="/display?fileName=' + arr[i].thumbnailURL + '" alt="" className="img-thumbnail"/>';
+            str += '        <span class="badge badge-light" data-name="' + arr[i].imageURL + '" style="position: absolute;left: 5px;top: 5px;">X</span>';
+            str += '    </div>';
+            str += '  </div>';
+            str += ' </div>';
+
+
+          }
+          divArea.append(str);
+        }
+        //이미지파일 삭제
+        $(".uploadResult").on("click","span",function () {
+          let target=$(this);
+          let fileName=$(this).data("name");//<div data-name="파일명"
+          let targetDiv= $(this).closest("div.col");//<div class=".col" 삭제
+
+          $.post('/removeFile',
+                  {fileName:fileName},
+                  function (result){
+                    if(result==true){
+                      targetDiv.remove();
+                    }
+                  }
+          );
+        })
+        //submit
+        $("button[type='submit']").on("click",function (e) {
+          e.preventDefault();//서브밋 버튼이나 <a>링크에서 이동 금지
+
+          let str="";
+          $(".uploadResult > div.col").each(function (i, obj) {
+            console.log(i, obj);
+            str+='<input type="hidden" name="imageDTOList['+i+'].imgName" value="'+$(obj).data("name")+'">';
+            str+='<input type="hidden" name="imageDTOList['+i+'].uuid" value="'+$(obj).data("uuid")+'">';
+            str+='<input type="hidden" name="imageDTOList['+i+'].path" value="'+$(obj).data("path")+'">';
+          });
+
+          $(".box").html(str);
+
+          $(".contact-form").submit();//폼 자료 전송
+
+
+        });
+
+
+      });// $(document).ready(function () {
+
+
+    </script>
+
+  </th:block>
+</th:block>
